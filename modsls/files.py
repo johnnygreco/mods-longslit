@@ -18,13 +18,13 @@ arcs = SourceFiles(
 )
 
 G196 = SourceFiles(
-    red=['mods1r.20180916.0045.fits', 
-         'mods1r.20180916.0046.fits', 
+    red=[#'mods1r.20180916.0045.fits', something is up with these frames
+         #'mods1r.20180916.0046.fits', 
          'mods1r.20180917.0004.fits',
          'mods1r.20180917.0005.fits', 
          'mods1r.20180917.0006.fits'],
-    blue=['mods1b.20180916.0028.fits', 
-          'mods1b.20180916.0029.fits', 
+    blue=[#'mods1b.20180916.0028.fits', 
+          #'mods1b.20180916.0029.fits', 
           'mods1b.20180917.0001.fits',
           'mods1b.20180917.0002.fits', 
           'mods1b.20180917.0003.fits']

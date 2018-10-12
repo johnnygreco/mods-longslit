@@ -6,6 +6,7 @@ from os import path
 from subprocess import call
 from argparse import ArgumentParser
 from modsls import outpath, datapath, files
+import ccdproc
 
 def run_cmd(cmd, logfile):
     call(cmd, shell='True')
@@ -14,6 +15,8 @@ def run_cmd(cmd, logfile):
 parser = ArgumentParser()
 parser.add_argument('--targets', nargs='+', default=['G196'], type=str)
 parser.add_argument('--keep-extra-files', dest='keep_extra_files',
+                    action='store_true')
+parser.add_argument('--clean-cosmic-rays', dest='clean_cosmic_rays',
                     action='store_true')
 args = parser.parse_args()
 
@@ -91,6 +94,13 @@ for target in args.targets:
         cmd = 'modsProc.py -b {} {}'.format(fn, red_flat_fn)
         run_cmd(cmd, logfile)
         newfn = fn[:-5] + '_otf.fits'
+        if args.clean_cosmic_rays:
+            print('cleaning cosmic rays')
+            print('lacosmic algo: _otf --> _otfc', file=logfile)
+            ccd = ccdproc.cosmicray_lacosmic(ccdproc.CCDData.read(newfn))
+            extra_files.append(newfn)
+            newfn = fn[:-5] + '_otfc.fits'
+            ccd.write(newfn)
         call('mv ' + newfn + ' ' + outpath, shell=True)
 
     for fn in files.sources[target].blue:
@@ -98,6 +108,13 @@ for target in args.targets:
         cmd = 'modsProc.py -b {} {}'.format(fn, blue_flat_fn)
         run_cmd(cmd, logfile)
         newfn = fn[:-5] + '_otf.fits'
+        if args.clean_cosmic_rays:
+            print('cleaning cosmic rays')
+            print('lacosmic algo: _otf --> _otfc', file=logfile)
+            ccd = ccdproc.cosmicray_lacosmic(ccdproc.CCDData.read(newfn))
+            extra_files.append(newfn)
+            newfn = fn[:-5] + '_otfc.fits'
+            ccd.write(newfn)
         call('mv ' + newfn + ' ' + outpath, shell=True)
 
 print('\nremoving instrument signature for arcs')
