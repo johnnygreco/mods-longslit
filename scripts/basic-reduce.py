@@ -17,9 +17,9 @@ parser.add_argument('--keep-extra-files', dest='keep_extra_files',
                     action='store_true')
 args = parser.parse_args()
 
-print('*************************************************')
-print('***** running basic reduction using modsRed *****')
-print('*************************************************')
+print('****************************************************')
+print('***** running basic reduction using modsCCDRed *****')
+print('****************************************************')
 
 logfile = open(path.join(outpath, 'basic-reduce.log'), 'w')
 extra_files = []
