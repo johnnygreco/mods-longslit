@@ -130,8 +130,12 @@ def run_basic_reduction(targets, tred, tblu, keep_extra_files,
         run_cmd(cmd, logfile)
         newfn = fn[:-5] + '_otf.fits'
         extra_files.append(newfn)
-        red_arcs.append(trim_image(newfn, trim_red, logfile))
-    ccd = ccdproc.combine(red_arcs)
+        trimmed = trim_image(newfn, trim_red, logfile)
+        red_arcs.append(trimmed)
+        lamp = trimmed.header['CALLAMPS'].replace(' ', '')
+        trimmed.write(path.join(outpath, 'red-'+lamp+'-arcs.fits'), 
+                      overwrite=True)
+    ccd = ccdproc.combine(red_arcs, method='sum')
     fn = path.join(outpath, 'red_NeXeAr_arcs.fits')
     ccd.write(fn, overwrite=True)
     
@@ -142,8 +146,12 @@ def run_basic_reduction(targets, tred, tblu, keep_extra_files,
         run_cmd(cmd, logfile)
         newfn = fn[:-5] + '_otf.fits'
         extra_files.append(newfn)
-        blue_arcs.append(trim_image(newfn, trim_blue, logfile))
-    ccd = ccdproc.combine(blue_arcs)
+        trimmed = trim_image(newfn, trim_blue, logfile)
+        blue_arcs.append(trimmed)
+        lamp = trimmed.header['CALLAMPS'].replace(' ', '')
+        trimmed.write(path.join(outpath, 'blue-'+lamp+'-arcs.fits'), 
+                      overwrite=True)
+    ccd = ccdproc.combine(blue_arcs, method='sum')
     fn = path.join(outpath, 'blue_HgXeAr_arcs.fits')
     ccd.write(fn, overwrite=True)
 
