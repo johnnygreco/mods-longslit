@@ -5,7 +5,7 @@ import os
 import numpy as np
 from os import path
 from subprocess import call
-from modsls import outpath, datapath, files
+from redmods import outpath, datapath, files
 import ccdproc
 
 def run_cmd(cmd, logfile):

@@ -30,4 +30,13 @@ G196 = SourceFiles(
           'mods1b.20180917.0003.fits']
 )
 
-sources = dict(G196=G196)
+G191 = SourceFiles(
+    red=['mods1r.20180916.0039.fits',
+         'mods1r.20180916.0040.fits',
+         'mods1r.20180916.0041.fits'],
+    blue=['mods1b.20180916.0025.fits',
+          'mods1b.20180916.0026.fits',
+          'mods1b.20180916.0027.fits']
+)
+
+sources = dict(G196=G196, G191=G191)
