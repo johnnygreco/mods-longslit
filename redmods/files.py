@@ -17,6 +17,18 @@ arcs = SourceFiles(
           'mods1b.20180916.0012.fits']
 )
 
+
+# Feige 110 dual grating
+Feige110 = SourceFiles(
+    red=['mods1r.20180916.0021.fits', 
+         'mods1r.20180916.0022.fits', 
+         'mods1r.20180916.0023.fits'],
+    blue=['mods1b.20180916.0016.fits',
+          'mods1b.20180916.0017.fits',
+          'mods1b.20180916.0018.fits']
+)
+
+
 G196 = SourceFiles(
     red=[#'mods1r.20180916.0045.fits', something is up with these frames
          #'mods1r.20180916.0046.fits', 
@@ -40,3 +52,4 @@ G191 = SourceFiles(
 )
 
 sources = dict(G196=G196, G191=G191)
+standards = dict(Feige110=Feige110)

@@ -1,4 +1,8 @@
 from . import files
 
-outpath = '/Users/jgreco/local-io/LBT-2018B/data/redmods-output'
-datapath = '/Users/jgreco/local-io/LBT-2018B/data'
+semester = '2018B'
+local_io = '/Users/jgreco/local-io/'
+
+outpath = local_io + 'LBT-' + semester + '/data/redmods-output'
+datapath = local_io + 'LBT-' + semester + '/data'
+calipath = local_io + 'MODS-cali-data'
