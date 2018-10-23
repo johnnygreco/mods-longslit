@@ -5,9 +5,9 @@ try:
 except ImportError:
     from distutils.core import setup
 
-setup(name='redmods',
+setup(name='mods',
       version='0.1',
       author='Johnny Greco',
       author_email='jgreco.astro@gmail.com',
-      packages=['redmods'],
+      packages=['mods'],
       url='https://github.com/johnnygreco/mods-longslit')

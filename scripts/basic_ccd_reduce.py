@@ -5,7 +5,7 @@ import os
 import numpy as np
 from os import path
 from subprocess import call
-from redmods import outpath, datapath, files
+from mods import logger, datapath, files, utils
 import ccdproc
 
 
@@ -21,9 +21,10 @@ def trim_image(fn, trim, logfile):
     return ccd
 
 
-def reduce_object(file_list, flat_fn, trim, clean_cosmic_rays, logfile):
+def reduce_object(name, channel, file_list, flat_fn, trim, 
+                  clean_cosmic_rays, logfile, outpath):
     extra_files = []
-    for fn in file_list:
+    for num, fn in enumerate(file_list):
         fn = path.join(datapath, fn)
         cmd = 'modsProc.py -bf {} {}'.format(fn, flat_fn)
         run_cmd(cmd, logfile)
@@ -31,16 +32,17 @@ def reduce_object(file_list, flat_fn, trim, clean_cosmic_rays, logfile):
         ccd = trim_image(newfn, trim, logfile)
         if clean_cosmic_rays:
             print('cleaning cosmic rays')
-            print('lacosmic algo: _otf --> _otfc', file=logfile)
             ccd = ccdproc.cosmicray_lacosmic(ccd)
             extra_files.append(newfn)
-            newfn = fn[:-5] + '_otfc.fits'
+            newfn = path.join(
+                datapath, '{}-{}-{}.fits'.format(name, channel, num+1))
+            print('lacosmic algo: file name --> ' + newfn, file=logfile)
         ccd.write(newfn, overwrite=True)
         call('mv ' + newfn + ' ' + outpath, shell=True)
     return extra_files
 
 
-def reduce_arc(file_list, flat_fn, trim, logfile):
+def reduce_arc(channel, file_list, flat_fn, trim, logfile, outpath):
     extra_files = []
     for fn in file_list:
         fn = path.join(datapath, fn)
@@ -50,14 +52,14 @@ def reduce_arc(file_list, flat_fn, trim, logfile):
         extra_files.append(newfn)
         trimmed = trim_image(newfn, trim, logfile)
         lamp = trimmed.header['CALLAMPS'].replace(' ', '')
-        trimmed.write(path.join(outpath, 'red-'+lamp+'-arcs.fits'), 
+        trimmed.write(path.join(outpath, channel+'-'+lamp+'-arcs.fits'), 
                       overwrite=True)
     return extra_files
 
 
 def run_basic_ccd_reduction(targets, standards, tred, tblu, keep_extra_files, 
                             clean_cosmic_rays, do_arcs, force_make_flats, 
-                            log_fn):
+                            log_fn, outpath):
 
     print('********************************************************')
     print('***** running basic ccd reduction using modsCCDRed *****')
@@ -71,7 +73,7 @@ def run_basic_ccd_reduction(targets, standards, tred, tblu, keep_extra_files,
     blue_flat_fn = path.join(outpath, 'blue_master_flat.fits')
     red_flat_fn = path.join(outpath, 'red_master_flat.fits')
 
-    print('******* redmods logfile *******', file=logfile)
+    print('******* basic_ccd_reduce.py logfile *******', file=logfile)
     arg_log = '\ntargets: {}\nstandards: {}\ntrim red: {}\ntrim blue: {}\n'
     arg_log += 'keep extra files: {}\nclean cosmic rays: {}\n\n'
     arg_log = arg_log.format(
@@ -136,32 +138,39 @@ def run_basic_ccd_reduction(targets, standards, tred, tblu, keep_extra_files,
         cmd = 'modsPixFlat.py -f {} {}'.format(newfn, blue_flat_fn)
         run_cmd(cmd, logfile)
 
-    args = [clean_cosmic_rays, logfile]
+    args = [clean_cosmic_rays, logfile, outpath]
 
     if targets[0].lower() != 'none':
         for target in targets:
             print('\nremoving instrument signature for target ' + target)
             fn = files.sources[target]
             extra_files.extend(
-                reduce_object(fn.red, red_flat_fn, trim_red, *args))
+                reduce_object(target, 'red', fn.red, 
+                              red_flat_fn, trim_red, *args))
             extra_files.extend(
-                reduce_object(fn.blue, blue_flat_fn, trim_blue, *args))
+                reduce_object(target, 'blue', fn.blue, 
+                              blue_flat_fn, trim_blue, *args))
 
     if standards[0].lower() != 'none':
         for std in standards:
             print('\nremoving instrument signature for standard ' + std)
             fn = files.standards[std]
             extra_files.extend(
-                reduce_object(fn.red, red_flat_fn, trim_red, *args))
+                reduce_object(std, 'red', fn.red, 
+                              red_flat_fn, trim_red, *args))
             extra_files.extend(
-                reduce_object(fn.blue, blue_flat_fn, trim_blue, *args))
+                reduce_object(std, 'blue', fn.blue,
+                              blue_flat_fn, trim_blue, *args))
+
 
     if do_arcs:
+        args = [logfile, outpath]
         print('\nremoving instrument signature for arcs')
         extra_files.extend(
-            reduce_arc(files.arcs.red, red_flat_fn, trim_red, logfile))
+            reduce_arc('red', files.arcs.red, red_flat_fn, trim_red, *args))
         extra_files.extend(
-            reduce_arc(files.arcs.blue, blue_flat_fn, trim_blue, logfile))
+            reduce_arc('blue', files.arcs.blue, blue_flat_fn, trim_blue, 
+                       *args))
 
     print()
     if not keep_extra_files:
@@ -174,10 +183,13 @@ def run_basic_ccd_reduction(targets, standards, tred, tblu, keep_extra_files,
 if __name__ == '__main__':
     from argparse import ArgumentParser
 
+    default_out = os.path.join(datapath, 'mods-output')
+
     parser = ArgumentParser()
     parser.add_argument('--targets', nargs='+', default=['G196'], type=str)
     parser.add_argument(
         '--standards', nargs='+', default=['Feige110'], type=str)
+    parser.add_argument('-o', '--outpath', default=default_out)
     parser.add_argument('--trim-red', nargs=4, type=int, dest='trim_red',
                         default=[1330, 1775, 1290, 7406], 
                         help='trimming bounds red image (row then col bounds)')
@@ -195,6 +207,9 @@ if __name__ == '__main__':
         '--log-fn', dest='log_fn', default='basic-reduce.log', type=str)
     args = parser.parse_args()
 
+    logger.info('output directory will be ' + args.outpath)
+    utils.mkdir_if_needed(args.outpath)
+
     run_basic_ccd_reduction(args.targets, 
                             args.standards,
                             args.trim_red, 
@@ -203,4 +218,6 @@ if __name__ == '__main__':
                             args.clean_cosmic_rays, 
                             not args.no_arcs, 
                             args.force_make_flats,
-                            args.log_fn)
+                            args.log_fn, 
+                            args.outpath)
+

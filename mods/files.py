@@ -1,12 +1,21 @@
 from collections import namedtuple
-
 SourceFiles = namedtuple('SourceFiles', 'red blue')
 
+
 flats = SourceFiles(
+    # Slitless Dual VFlat 5 ND1.5
     red=['mods1r.20180916.000[1-5].fits'], 
+    # Slitless Dual VFlat 5 Clear, Slitless Dual VFlat 5 ND1.5
     blue=['mods1b.20180916.000[1-5].fits', 'mods1b.20180916.000[6-8].fits']
-    # Slitless Dual VFlat 5 Clear, Slitless Dual VFlat 10.0 + UG5
 )
+
+flats_2 = SourceFiles(
+    # VFLAT + Clear + ND1.5 Spectral Flat
+    red=['mods1r.20180915.005[3-7].fits'], 
+    # VFLAT + Clear + ND1.5 Spectral Flat, VFLAT + UG5 Spectral Flat
+    blue=['mods1b.20180915.004[3-7].fits', 'mods1b.20180915.004[8-9].fits']
+)
+
 
 arcs = SourceFiles(
     red=['mods1r.20180916.0010.fits', 
@@ -26,6 +35,17 @@ Feige110 = SourceFiles(
     blue=['mods1b.20180916.0016.fits',
           'mods1b.20180916.0017.fits',
           'mods1b.20180916.0018.fits']
+)
+
+
+# GD71 dual grating
+GD71 = SourceFiles(
+    red=['mods1r.20180916.0056.fits',
+         'mods1r.20180916.0057.fits',
+         'mods1r.20180916.0058.fits'],
+    blue=['mods1b.20180916.0030.fits',
+          'mods1b.20180916.0031.fits', 
+          'mods1b.20180916.0032.fits']
 )
 
 
@@ -52,4 +72,4 @@ G191 = SourceFiles(
 )
 
 sources = dict(G196=G196, G191=G191)
-standards = dict(Feige110=Feige110)
+standards = dict(Feige110=Feige110, GD71=GD71)
