@@ -3,7 +3,7 @@ from __future__ import print_function
 
 import os
 from pyraf import iraf
-from .. import calipath, outpath
+from .. import calipath
 from .. import logger
 
 # load necessary iraf packages
@@ -17,16 +17,12 @@ __all__ = ['identify', 'reidentify', 'fitcoords', 'transform', 'background',
 
 
 def _check_working_dir(data_path):
-    if data_path is None:
-        logger.debug('changing directory to ' + outpath)
-        os.chdir(outpath)
-    else:
-        if os.getcwd() != data_path:
-            logger.debug('changing directory to ' + data_path)
-            os.chdir(data_path)
+    if os.getcwd() != os.path.abspath(data_path):
+        logger.debug('changing directory to ' + data_path)
+        os.chdir(data_path)
 
 
-def identify(arc_fn, arc_lamp, mods_channel, data_path=None, params={}):
+def identify(arc_fn, arc_lamp, mods_channel, data_path='.', params={}):
     """
     Run iraf identify to find and label lines in arc lamp for 
     wavelength solution. This one needs to be done by hand :( 
@@ -61,7 +57,7 @@ def identify(arc_fn, arc_lamp, mods_channel, data_path=None, params={}):
     iraf.identify(images=arc_fn, coordlist=line_list)
 
 
-def reidentify(ref_fn, images, arc_lamp, mods_channel, data_path=None, 
+def reidentify(ref_fn, images, arc_lamp, mods_channel, data_path='.', 
                params={}):
     """
     Run iraf reidentify to trace identified lines along the spatial axis. 
@@ -100,7 +96,7 @@ def reidentify(ref_fn, images, arc_lamp, mods_channel, data_path=None,
     iraf.reidentify(reference=ref_fn, images=images)
 
 
-def fitcoords(images, data_path=None, params={}):
+def fitcoords(images, data_path='.', params={}):
     """
     Run iraf fitcoords to fit 2D function to wavelength as a function of 
     column and line number. 
@@ -129,7 +125,7 @@ def fitcoords(images, data_path=None, params={}):
     iraf.fitcoords(images=images)
 
 
-def transform(images, out_images, coord_fits, data_path=None,  params={}):
+def transform(images, out_images, coord_fits, data_path='.',  params={}):
     """
     Run iraf transform to rectify 2D spectrum.
 
@@ -162,7 +158,7 @@ def transform(images, out_images, coord_fits, data_path=None,  params={}):
     iraf.transform(input=images, output=out_images, fitnames=coord_fits)
 
 
-def background(images, out_images, data_path=None,  params={}):
+def background(images, out_images, data_path='.',  params={}):
     """
     Run iraf background subtraction.
 
@@ -194,7 +190,7 @@ def background(images, out_images, data_path=None,  params={}):
     iraf.background(input=images, output=out_images)
 
 
-def extinction(images, out_images, data_path=None):
+def extinction(images, out_images, data_path='.'):
     """
     Run iraf extinction correction.
 
@@ -217,7 +213,7 @@ def extinction(images, out_images, data_path=None):
     iraf.extinction(input=images, output=out_images)
 
 
-def apall(images, out_images, data_path=None, params={}):
+def apall(images, out_images, data_path='.', params={}):
     """
     Run iraf apall to extract 1d spectrum. 
 
@@ -272,7 +268,7 @@ def apall(images, out_images, data_path=None, params={}):
     iraf.apall(input=images, output=out_images)
 
 
-def standard_star(std_in, std_out, star_name, sampling=10, data_path=None,  
+def standard_star(std_in, std_out, star_name, sampling=10, data_path='.',  
                   sens_prefix='sens', params={}):
     """
     Run iraf transform to rectify 2D spectrum.
@@ -320,8 +316,7 @@ def standard_star(std_in, std_out, star_name, sampling=10, data_path=None,
     iraf.sensfunc(standards=std_out)
 
 
-def calibrate(spec_in, spec_out, data_path=None, 
-              sens_prefix='sens', params={}):
+def calibrate(spec_in, spec_out, data_path='.', sens_prefix='sens', params={}):
     """
     Run iraf calibrate to flux calibrate input spectrum.
 
