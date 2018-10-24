@@ -19,10 +19,11 @@ def _get_list(param, dtype=str):
         sys.exit(1)
 
 
-class ReduceConfig(object):
+class LongslitReduceConfig(object):
+    
 
     lamp_abbrev = dict(argon='AR', 
-                       neon_mercury='NEHG', 
+                       neon='NEHG', 
                        xenon_krypton='XEKR')
 
     def __init__(self, filename):
