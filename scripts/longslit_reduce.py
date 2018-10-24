@@ -7,9 +7,9 @@ import mods
 
 def run_longslit_reduce(config_filename): 
 
-    mods.logger('starting mods longslit reduction...')
+    mods.logger.info('starting mods longslit reduction...')
 
-    config = mods.ReduceConfig(config_filename)
+    config = mods.LongslitReduceConfig(config_filename)
     data_path = config.data_path
 
     if config.do_identify:
@@ -58,7 +58,8 @@ def run_longslit_reduce(config_filename):
     for i in range(2):
         for obj in object_types[i]:
             files = [fn[:-5] + 'tb.fits' for fn in object_files[i][obj]]
-            out_fn = '{}-{}-tb.fits'.format(obj, stack_funcs[i])
+            out_fn = '{}-{}-{}-tb.fits'.format(
+                obj, config.mods_channel, stack_funcs[i])
             stack_files.append(out_fn)
             if config.do_stack:
                 mods.imarith.stack(files, out_fn, stack_funcs[i], data_path)
@@ -78,10 +79,11 @@ def run_longslit_reduce(config_filename):
 
     std_files = []
     for std in config.standards:
-        in_fn = '{}-{}-tbe-1d.fits'.format(std, config.std_stack_func)
+        in_fn = '{}-{}-{}-tbe-1d.fits'.format(
+            std, config.mods_channel, config.std_stack_func)
         out_fn = in_fn[:-5] + '.std'
         std_files.append(out_fn)
-        sens_prefix = 'sens-' + std
+        sens_prefix = 'sens-{}-{}'.format(std, config.mods_channel)
         if config.do_standard_star:
             mods.reduce.standard_star(
                 in_fn, out_fn, std, config.std_sampling, data_path,
@@ -90,9 +92,10 @@ def run_longslit_reduce(config_filename):
     if config.do_calibrate:
         std_fn = std_files[config.calibrate_star_idx]
         std = config.standards[config.calibrate_star_idx]
-        sens_prefix = 'sens-' + std
+        sens_prefix = 'sens-{}-{}'.format(std, config.mods_channel)
         for src in config.sources:
-            in_fn = '{}-{}-tbe-1d.fits'.format(src, config.src_stack_func)
+            in_fn = '{}-{}-{}-tbe-1d.fits'.format(
+                src, config.mods_channel, config.src_stack_func)
             out_fn = in_fn[:-5] + '-flam.fits'
             mods.reduce.calibrate(
                 in_fn, out_fn, data_path, sens_prefix, config.calibrate_params)
