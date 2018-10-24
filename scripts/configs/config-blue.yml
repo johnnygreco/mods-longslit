@@ -1,0 +1,38 @@
+data_path: /Users/jgreco/local-io/LBT-2018B/data/reduced-10-23
+
+mods_channel: blue
+
+arc_lamp: argon
+
+sources:
+    name: G196
+    nexp: 3
+    stack_func: mean
+
+standards: 
+    name: Feige110
+    nexp: 3
+    stack_func: median
+    sampling: 50 # angstrom
+    calibrate_star_idx: 0
+
+pipeline_steps:
+    identify: True
+    reidentify: True
+    fitcoords: True
+    transform: True
+    background: True
+    stack: True
+    extinction: True
+    apall: True
+    standard_star: True
+    calibrate: True
+
+identify_params: {}
+reidentify_params: {}
+fitcoords_params: {}
+transform_params: {}
+background_params: {}
+apall_params: {}
+standard_star_params: {}
+calibrate_params: {}
