@@ -26,16 +26,17 @@ def run_longslit_reduce(config_filename):
         mods.reduce.fitcoords(
             config.arc_fn, data_path, config.fitcoords_params)
 
-    object_types = [config.sources, config.standards]
-    object_files = [config.src_files, config.std_files]
+    object_types = config.object_types
+    object_files = config.object_files
 
     if config.do_transform:
-        in_fn = config.arc_fn
-        out_fn = in_fn[:-5] + '-t.fits'
-        mods.reduce.transform(
-            in_fn, out_fn, config.arc_fn[:-5], data_path, 
-            config.transform_params)
-        for i in range(2):
+        if config.do_identify:
+            in_fn = config.arc_fn
+            out_fn = in_fn[:-5] + '-t.fits'
+            mods.reduce.transform(
+                in_fn, out_fn, config.arc_fn[:-5], data_path, 
+                config.transform_params)
+        for i in range(len(object_types)):
             for obj in object_types[i]:
                 for in_fn in object_files[i][obj]:
                     out_fn = in_fn[:-5] + 't.fits'
@@ -44,7 +45,7 @@ def run_longslit_reduce(config_filename):
                         config.transform_params)
 
     if config.do_background:
-        for i in range(2):
+        for i in range(len(object_types)):
             for obj in object_types[i]:
                 files = [fn[:-5] + 't.fits' for fn in object_files[i][obj]]
                 out =  [fn[:-5] + 'b.fits' for fn in files]
@@ -55,7 +56,7 @@ def run_longslit_reduce(config_filename):
 
     stack_files = []
     stack_funcs = [config.src_stack_func, config.std_stack_func]
-    for i in range(2):
+    for i in range(len(object_types)):
         for obj in object_types[i]:
             files = [fn[:-5] + 'tb.fits' for fn in object_files[i][obj]]
             out_fn = '{}-{}-{}-tb.fits'.format(
@@ -73,10 +74,16 @@ def run_longslit_reduce(config_filename):
 
     if config.do_apall:
         out = [fn[:-5] + '-1d.fits' for fn in ext_files]
-        out = ','.join(out)
+        out_str = ','.join(out)
         files = ','.join(ext_files)
-        mods.reduce.apall(files, out, data_path, config.apall_params)
-
+        mods.reduce.apall(files, out_str, data_path, config.apall_params)
+        for fn in out:
+            fn = os.path.join(data_path, fn)
+            apall_files = [fn[:-5] + '.0001.fits', fn[:-5] + '.ms.fits']
+            for apall_fn in apall_files:
+                if os.path.isfile(apall_fn):
+                    os.rename(apall_fn, fn)
+        
     std_files = []
     for std in config.standards:
         in_fn = '{}-{}-{}-tbe-1d.fits'.format(

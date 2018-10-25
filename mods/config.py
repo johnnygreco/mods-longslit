@@ -7,20 +7,31 @@ import numpy as np
 from . import logger
 
 
+__all__ = ['LongslitReduceConfig']
+
+
 def _get_list(param, dtype=str):
     if type(param) == int:
         return [param]
     elif type(param) == str:
         param = param.split(',')
         return [dtype(p.replace(' ', '')) for p in param]
+    elif param is None:
+        return None
     else:
         logger.exception(
             '{} for {} is not an valid type'.format(type(param), param))
         sys.exit(1)
 
 
+def _get_params(program):
+    return {} if program is None else program
+
+
 class LongslitReduceConfig(object):
-    
+    """
+    Class to parse the MODS longslit reduction configuration file.
+    """
 
     lamp_abbrev = dict(argon='AR', 
                        neon='NEHG', 
@@ -55,12 +66,17 @@ class LongslitReduceConfig(object):
         self.std_sampling = config['standards']['sampling']
         self.calibrate_star_idx = config['standards']['calibrate_star_idx']
 
+        self.object_types = [self.sources]
+        self.object_files = [self.src_files]
         self.std_files = {}
-        for std, nexp in zip(self.standards, self.std_nexp):
-            self.std_files[std] = []
-            for num in range(1, nexp+1):
-                fn = '{}-{}-{}.fits'.format(std, self.mods_channel, num)
-                self.std_files[std].append(fn)
+        if self.std_nexp is not None:
+            for std, nexp in zip(self.standards, self.std_nexp):
+                self.std_files[std] = []
+                for num in range(1, nexp+1):
+                    fn = '{}-{}-{}.fits'.format(std, self.mods_channel, num)
+                    self.std_files[std].append(fn)
+            self.object_types.append(self.standards)
+            self.object_files.append(self.std_files)
 
         self.pipeline_steps = config['pipeline_steps']
         self.do_identify = self.pipeline_steps['identify']
@@ -74,11 +90,11 @@ class LongslitReduceConfig(object):
         self.do_standard_star = self.pipeline_steps['standard_star']
         self.do_calibrate = self.pipeline_steps['calibrate']
 
-        self.identify_params = config['identify_params']
-        self.reidentify_params = config['reidentify_params']
-        self.fitcoords_params = config['fitcoords_params']
-        self.transform_params = config['transform_params']
-        self.background_params = config['background_params']
-        self.apall_params = config['apall_params']
-        self.standard_star_params = config['apall_params']
-        self.calibrate_params = config['calibrate_params']
+        self.identify_params = _get_params(config['identify_params'])
+        self.reidentify_params = _get_params(config['reidentify_params'])
+        self.fitcoords_params = _get_params(config['fitcoords_params'])
+        self.transform_params = _get_params(config['transform_params'])
+        self.background_params = _get_params(config['background_params'])
+        self.apall_params = _get_params(config['apall_params'])
+        self.standard_star_params = _get_params(config['standard_star_params'])
+        self.calibrate_params = _get_params(config['calibrate_params'])

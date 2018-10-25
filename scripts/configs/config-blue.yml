@@ -5,34 +5,43 @@ mods_channel: blue
 arc_lamp: argon
 
 sources:
-    name: G196
+    name: G191
     nexp: 3
     stack_func: mean
 
 standards: 
     name: Feige110
-    nexp: 3
+    nexp: ~
     stack_func: median
     sampling: 50 # angstrom
     calibrate_star_idx: 0
 
 pipeline_steps:
-    identify: True
-    reidentify: True
-    fitcoords: True
-    transform: True
-    background: True
-    stack: True
-    extinction: True
+    identify: False
+    reidentify: False
+    fitcoords: False
+    transform: False
+    background: False
+    stack: False
+    extinction: False
     apall: True
-    standard_star: True
+    standard_star: False
     calibrate: True
 
-identify_params: {}
-reidentify_params: {}
-fitcoords_params: {}
-transform_params: {}
-background_params: {}
-apall_params: {}
-standard_star_params: {}
-calibrate_params: {}
+identify_params: 
+
+reidentify_params: 
+
+fitcoords_params:
+
+transform_params: 
+
+background_params: 
+
+apall_params: 
+    t_nsum: 600
+    t_nlost: 50
+
+standard_star_params: 
+
+calibrate_params: 
