@@ -11,12 +11,12 @@ __all__ = ['LongslitReduceConfig']
 
 
 def _get_list(param, dtype=str):
-    if type(param) == int:
+    if type(param) == int and param > 0:
         return [param]
     elif type(param) == str:
         param = param.split(',')
         return [dtype(p.replace(' ', '')) for p in param]
-    elif param is None:
+    elif param is None or param == 0:
         return None
     else:
         logger.exception(
@@ -54,11 +54,12 @@ class LongslitReduceConfig(object):
         self.src_stack_func = config['sources']['stack_func']
 
         self.src_files = {}
-        for src, nexp in zip(self.sources, self.src_nexp):
-            self.src_files[src] = []
-            for num in range(1, nexp+1):
-                fn = '{}-{}-{}.fits'.format(src, self.mods_channel, num)
-                self.src_files[src].append(fn)
+        if self.sources is not None:
+            for src, nexp in zip(self.sources, self.src_nexp):
+                self.src_files[src] = []
+                for num in range(1, nexp+1):
+                    fn = '{}-{}-{}.fits'.format(src, self.mods_channel, num)
+                    self.src_files[src].append(fn)
 
         self.standards = _get_list(config['standards']['name'])
         self.std_nexp = _get_list(config['standards']['nexp'], int)
@@ -66,8 +67,8 @@ class LongslitReduceConfig(object):
         self.std_sampling = config['standards']['sampling']
         self.calibrate_star_idx = config['standards']['calibrate_star_idx']
 
-        self.object_types = [self.sources]
-        self.object_files = [self.src_files]
+        self.object_types = [self.sources] if self.sources is not None else []
+        self.object_files = [self.src_files] if self.sources is not None else []
         self.std_files = {}
         if self.std_nexp is not None:
             for std, nexp in zip(self.standards, self.std_nexp):

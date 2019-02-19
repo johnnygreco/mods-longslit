@@ -2,15 +2,18 @@ from __future__ import print_function
 
 
 import os
-from pyraf import iraf
 from .. import calipath
 from .. import logger
 
-# load necessary iraf packages
-iraf.onedspec(_doprint=0)
-iraf.twodspec(_doprint=0)
-iraf.longslit(_doprint=0)
-iraf.apextract(_doprint=0)
+try:
+    # load necessary iraf packages
+    from pyraf import iraf
+    iraf.onedspec(_doprint=0)
+    iraf.twodspec(_doprint=0)
+    iraf.longslit(_doprint=0)
+    iraf.apextract(_doprint=0)
+except:
+    logger.warn('Pyraf not found. Iraf-dependent functions will not work.')
 
 __all__ = ['identify', 'reidentify', 'fitcoords', 'transform', 'background', 
            'extinction', 'apall', 'standard_star', 'calibrate']
@@ -254,7 +257,7 @@ def apall(images, out_images, data_path='.', params={}):
     iraf.apall.upper = params.pop('upper', 20)
 
     # trace
-    iraf.apall.t_nsum = params.pop('t_nsum', 200)
+    iraf.apall.t_nsum = params.pop('t_nsum', 300)
     iraf.apall.t_step = params.pop('t_step', 10)
     iraf.apall.t_nlost = params.pop('t_nlost', 10)
 

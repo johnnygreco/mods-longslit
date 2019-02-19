@@ -22,14 +22,28 @@ def trim_image(fn, trim, logfile):
 
 
 def reduce_object(name, channel, file_list, flat_fn, trim, 
-                  clean_cosmic_rays, logfile, outpath):
+                  clean_cosmic_rays, logfile, outpath, bias_fn=None):
     extra_files = []
     for num, fn in enumerate(file_list):
         fn = path.join(datapath, fn)
-        cmd = 'modsProc.py -bf {} {}'.format(fn, flat_fn)
-        run_cmd(cmd, logfile)
-        newfn = fn[:-5] + '_otf.fits'
-        ccd = trim_image(newfn, trim, logfile)
+        if bias_fn is not None:
+            cmd = 'modsBias.py -f {}'.format(fn)
+            run_cmd(cmd, logfile)
+            fn = fn[:-5] + '_ot.fits'
+            newfn = fn[:-5]+'B.fits'
+            cmd = 'modsSub.py -f {} {} {}'.format(fn, bias_fn, newfn)
+            run_cmd(cmd, logfile)
+            fn=newfn
+            extra_files.append(newfn)
+            cmd = 'modsProcNoBias.py -bf {} {}'.format(fn, flat_fn)
+            run_cmd(cmd, logfile)
+            newfn = fn[:-5] + 'f.fits'
+            ccd = trim_image(newfn, trim, logfile)
+        else:
+            cmd = 'modsProc.py -bf {} {}'.format(fn, flat_fn)
+            run_cmd(cmd, logfile)
+            newfn = fn[:-5] + '_otf.fits'
+            ccd = trim_image(newfn, trim, logfile)
         if clean_cosmic_rays:
             print('cleaning cosmic rays')
             ccd = ccdproc.cosmicray_lacosmic(ccd)
@@ -57,9 +71,18 @@ def reduce_arc(channel, file_list, flat_fn, trim, logfile, outpath):
     return extra_files
 
 
+def _iterfiles(file_str, label=''):
+    i = int(file_str[file_str.find('[')+1])
+    j = int(file_str[file_str.find(']')-1])
+    nums = range(i, j + 1)
+    prefix = file_str[:file_str.find('[')]
+    file_list = [prefix + str(num) + label + '.fits' for num in nums]
+    return file_list
+
+
 def run_basic_ccd_reduction(targets, standards, tred, tblu, keep_extra_files, 
                             clean_cosmic_rays, do_arcs, force_make_flats, 
-                            log_fn, outpath):
+                            log_fn, master_bias, outpath):
 
     print('********************************************************')
     print('***** running basic ccd reduction using modsCCDRed *****')
@@ -80,6 +103,35 @@ def run_basic_ccd_reduction(targets, standards, tred, tblu, keep_extra_files,
         targets, standards, tred, tblu, keep_extra_files, clean_cosmic_rays)
     print(arg_log, file=logfile)
 
+    if master_bias:
+
+        print('\n***** creating red master bias *****')
+        
+        bias_files = path.join(datapath, files.bias.red)
+        cmd = 'modsBias.py -f ' + bias_files
+        run_cmd(cmd, logfile)
+
+        red_bias = path.join(outpath, 'red_master_bias.fits')
+        bias_files = bias_files[:-5] + '_ot.fits'
+        cmd = 'modsMedian.py -f {} {}'.format(bias_files, red_bias)
+        run_cmd(cmd, logfile)
+        extra_files.append(bias_files)
+
+        print('\n***** creating blue master bias *****')
+        
+        bias_files = path.join(datapath, files.bias.blue)
+        cmd = 'modsBias.py -f ' + bias_files
+        run_cmd(cmd, logfile)
+
+        blue_bias = path.join(outpath, 'blue_master_bias.fits')
+        bias_files = bias_files[:-5] + '_ot.fits'
+        cmd = 'modsMedian.py -f {} {}'.format(bias_files, blue_bias)
+        run_cmd(cmd, logfile)
+        extra_files.append(bias_files)
+    else:
+        red_bias = None
+        blue_bias = None
+
     if not os.path.isfile(red_flat_fn) or force_make_flats:
         print('\n***** building master flat for red channel *****')
 
@@ -87,8 +139,18 @@ def run_basic_ccd_reduction(targets, standards, tred, tblu, keep_extra_files,
         cmd = 'modsBias.py -f ' + path.join(datapath, files.flats.red[0])
         run_cmd(cmd, logfile)
 
+        if red_bias is not None:
+            print('\nbias subtracting red flats')
+            for fn in _iterfiles(files.flats.red[0], '_ot'):
+                fn = path.join(datapath, fn)
+                newfn = fn[:-5] + 'B.fits'
+                cmd = 'modsSub.py -f {} {} {}'.format(fn, red_bias, newfn)
+                run_cmd(cmd, logfile)
+                extra_files.append(newfn)
+
         print('\nmedian combining red flats')
-        newfn = path.join(datapath, files.flats.red[0][:-5] + '_ot.fits')
+        label = '_otB.fits' if red_bias else '_ot.fits'
+        newfn = path.join(datapath, files.flats.red[0][:-5] + label)
         outfn = path.join(outpath, 'rflat_med.fits')
         extra_files.extend([newfn, outfn])
         cmd = 'modsMedian.py -f {} {}'.format(newfn, outfn)
@@ -111,14 +173,26 @@ def run_basic_ccd_reduction(targets, standards, tred, tblu, keep_extra_files,
         cmd = cmd + ' ' + path.join(datapath, files.flats.blue[1])
         run_cmd(cmd, logfile)
 
+        if blue_bias is not None:
+            print('\nbias subtracting red flats')
+            for i in range(2):
+                for fn in _iterfiles(files.flats.blue[i], '_ot'):
+                    fn = path.join(datapath, fn)
+                    newfn = fn[:-5] + 'B.fits'
+                    cmd = 'modsSub.py -f {} {} {}'.format(fn, red_bias, newfn)
+                    run_cmd(cmd, logfile)
+                    extra_files.append(newfn)
+
         print('\nmedian combining blue flats')
-        newfn = path.join(datapath, files.flats.blue[0][:-5] + '_ot.fits')
+        label = '_otB.fits' if red_bias else '_ot.fits'
+        newfn = path.join(datapath, files.flats.blue[0][:-5] + label)
+        newfn = path.join(datapath, files.flats.blue[0][:-5] + label)
         bclfn = path.join(outpath, 'bclrflat_med.fits')
         extra_files.extend([newfn, bclfn])
         cmd = 'modsMedian.py -f {} {}'.format(newfn, bclfn)
         run_cmd(cmd, logfile)
 
-        newfn = path.join(datapath, files.flats.blue[1][:-5] + '_ot.fits')
+        newfn = path.join(datapath, files.flats.blue[1][:-5] + label)
         ug5fn = path.join(outpath, 'ug5flat_med.fits')
         extra_files.extend([newfn, ug5fn])
         cmd = 'modsMedian.py -f {} {}'.format(newfn, ug5fn)
@@ -146,10 +220,12 @@ def run_basic_ccd_reduction(targets, standards, tred, tblu, keep_extra_files,
             fn = files.sources[target]
             extra_files.extend(
                 reduce_object(target, 'red', fn.red, 
-                              red_flat_fn, trim_red, *args))
+                              red_flat_fn, trim_red, *args, 
+                              bias_fn=red_bias))
             extra_files.extend(
                 reduce_object(target, 'blue', fn.blue, 
-                              blue_flat_fn, trim_blue, *args))
+                              blue_flat_fn, trim_blue, *args, 
+                              bias_fn=blue_bias))
 
     if standards[0].lower() != 'none':
         for std in standards:
@@ -157,11 +233,12 @@ def run_basic_ccd_reduction(targets, standards, tred, tblu, keep_extra_files,
             fn = files.standards[std]
             extra_files.extend(
                 reduce_object(std, 'red', fn.red, 
-                              red_flat_fn, trim_red, *args))
+                              red_flat_fn, trim_red, *args, 
+                              bias_fn=red_bias))
             extra_files.extend(
                 reduce_object(std, 'blue', fn.blue,
-                              blue_flat_fn, trim_blue, *args))
-
+                              blue_flat_fn, trim_blue, *args, 
+                              bias_fn=blue_bias))
 
     if do_arcs:
         args = [logfile, outpath]
@@ -201,6 +278,7 @@ if __name__ == '__main__':
     parser.add_argument('--clean-cosmic-rays', dest='clean_cosmic_rays',
                         action='store_true')
     parser.add_argument('--no-arcs', dest='no_arcs', action='store_true')
+    parser.add_argument('--master-bias', dest='master_bias', action='store_true')
     parser.add_argument('--force-make-flats', dest='force_make_flats', 
                         action='store_true')
     parser.add_argument(
@@ -218,6 +296,6 @@ if __name__ == '__main__':
                             args.clean_cosmic_rays, 
                             not args.no_arcs, 
                             args.force_make_flats,
-                            args.log_fn, 
+                            args.log_fn,
+                            args.master_bias,
                             args.outpath)
-

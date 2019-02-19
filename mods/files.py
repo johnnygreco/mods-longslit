@@ -16,6 +16,10 @@ flats_2 = SourceFiles(
     blue=['mods1b.20180915.004[3-7].fits', 'mods1b.20180915.004[8-9].fits']
 )
 
+bias = SourceFiles(
+    red='mods1r.20180915.000[1-5].fits',
+    blue='mods1b.20180915.000[1-5].fits'
+)
 
 arcs = SourceFiles(
     red=['mods1r.20180916.0010.fits', 
@@ -71,5 +75,11 @@ G191 = SourceFiles(
           'mods1b.20180916.0027.fits']
 )
 
-sources = dict(G196=G196, G191=G191)
+G156 = SourceFiles(
+    red=[],
+    blue=['mods1b.20180916.0019.fits',
+          'mods1b.20180916.0020.fits']
+)
+
+sources = dict(G196=G196, G191=G191, G156=G156)
 standards = dict(Feige110=Feige110, GD71=GD71)
